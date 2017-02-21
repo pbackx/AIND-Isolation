@@ -7,7 +7,7 @@ You must test your agent's strength against a set of agents with known
 relative strength using tournament.py and include the results in your report.
 """
 import random
-
+import math
 
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
@@ -118,25 +118,35 @@ class CustomPlayer:
 
         self.time_left = time_left
 
-        # TODO: finish this function!
-
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
+
+        if game.get_player_location(self) == None:
+            return (math.ceil(game.height/2), math.ceil(game.width/2)) #TODO better way of determining an opening move, I should probably also check if I'm the first or second player
+
+        current_best_move = None
 
         try:
             # The search method call (alpha beta or minimax) should happen in
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            pass
+            for iteration in range(1, self.search_depth):
+                #TODO I'm ignoring the score for now ... not sure if that's a good idea
+                if self.method == 'minimax':
+                    _, current_best_move = self.minimax(game, iteration, True) #TODO calculate maximizing or not
+                elif self.method == 'alphabeta':
+                    _, current_best_move = self.alphabeta(game, iteration, True)  # TODO calculate maximizing or not
+                else:
+                    raise NotImplementedError("Only minimax and alphabeta method implemeented")
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
             pass
 
         # Return the best move from the last completed search iteration
-        raise NotImplementedError
+        return current_best_move
 
     def minimax(self, game, depth, maximizing_player=True):
         """Implement the minimax search algorithm as described in the lectures.
@@ -173,7 +183,7 @@ class CustomPlayer:
             raise Timeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+        return 1.0, (0, 0)
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
@@ -217,4 +227,4 @@ class CustomPlayer:
             raise Timeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+        return 1.0, (0, 0)
