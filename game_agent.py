@@ -132,12 +132,17 @@ class CustomPlayer:
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            for iteration in range(1, self.search_depth):
+            #TODO only do iterative deepening when self.iterative is true
+            if self.iterative:
+                start_depth = self.search_depth
+            else:
+                start_depth = 1
+            for iteration in range(start_depth, self.search_depth + 1):
                 #TODO I'm ignoring the score for now ... not sure if that's a good idea
                 if self.method == 'minimax':
-                    _, current_best_move = self.minimax(game, iteration, True) #TODO calculate maximizing or not
+                    _, current_best_move = self.minimax(game, iteration)
                 elif self.method == 'alphabeta':
-                    _, current_best_move = self.alphabeta(game, iteration, True)  # TODO calculate maximizing or not
+                    _, current_best_move = self.alphabeta(game, iteration)
                 else:
                     raise NotImplementedError("Only minimax and alphabeta method implemeented")
 
@@ -182,8 +187,30 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        return 1.0, (0, 0)
+        if depth <= 0:
+            return self.score(game, self), (-1, -1)
+
+        if maximizing_player:
+            best_score = float("-inf")
+        else:
+            best_score = float("inf")
+
+        best_move = (-1, -1)
+        for move in game.get_legal_moves():
+            step_game = game.forecast_move(move)
+            step_score, _ = self.minimax(step_game, depth - 1, not maximizing_player)
+            if self.is_better_score(step_score, best_score, maximizing_player):
+                best_score = step_score
+                best_move = move
+
+        return best_score, best_move
+
+    @staticmethod
+    def is_better_score(score_to_test, score, maximizing):
+        if maximizing:
+            return score_to_test > score
+        else:
+            return score_to_test < score
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
@@ -226,5 +253,6 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
+        # TODO same as minimax, but after evaluating a step, check if the score is higher or lower than the alpha or beta
+
         return 1.0, (0, 0)
