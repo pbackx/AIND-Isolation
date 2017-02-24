@@ -9,6 +9,9 @@ relative strength using tournament.py and include the results in your report.
 import random
 import math
 
+import itertools
+
+
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
     pass
@@ -37,8 +40,26 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
 
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    possible_directions = set()
+    for move_x, move_y in game.get_legal_moves(player):
+        current_x, current_y = game.get_player_location(player)
+        if move_x - current_x == 0:
+            dir_x = 0
+        else:
+            dir_x = math.copysign(1, move_x - current_x)
+        if move_y - current_y == 0:
+            dir_y = 0
+        else:
+            dir_y = math.copysign(1, move_y - current_y)
+        possible_directions.add((dir_x, dir_y))
+
+    return float(len(possible_directions))
 
 
 class CustomPlayer:
@@ -122,8 +143,9 @@ class CustomPlayer:
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
 
-        if game.get_player_location(self) == None:
-            return (math.ceil(game.height/2), math.ceil(game.width/2)) #TODO better way of determining an opening move, I should probably also check if I'm the first or second player
+        if game.get_player_location(self) is None:
+            return math.ceil(game.height / 2), math.ceil(
+                game.width / 2)  # TODO better way of determining an opening move, I should probably also check if I'm the first or second player
 
         current_best_move = None
 
@@ -132,25 +154,26 @@ class CustomPlayer:
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            #TODO only do iterative deepening when self.iterative is true
             if self.iterative:
-                start_depth = self.search_depth
+                for iteration in itertools.count(1):
+                    current_best_move = self.run_method(game, iteration)
             else:
-                start_depth = 1
-            for iteration in range(start_depth, self.search_depth + 1):
-                #TODO I'm ignoring the score for now ... not sure if that's a good idea
-                if self.method == 'minimax':
-                    _, current_best_move = self.minimax(game, iteration)
-                elif self.method == 'alphabeta':
-                    _, current_best_move = self.alphabeta(game, iteration)
-                else:
-                    raise NotImplementedError("Only minimax and alphabeta method implemeented")
+                current_best_move = self.run_method(game, self.search_depth)
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
             pass
 
         # Return the best move from the last completed search iteration
+        return current_best_move
+
+    def run_method(self, game, depth):
+        if self.method == 'minimax':
+            _, current_best_move = self.minimax(game, depth)
+        elif self.method == 'alphabeta':
+            _, current_best_move = self.alphabeta(game, depth)
+        else:
+            raise NotImplementedError("Only minimax and alphabeta method implemeented")
         return current_best_move
 
     def minimax(self, game, depth, maximizing_player=True):
@@ -253,6 +276,34 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO same as minimax, but after evaluating a step, check if the score is higher or lower than the alpha or beta
+        if depth <= 0:
+            return self.score(game, self), (-1, -1)
 
-        return 1.0, (0, 0)
+        if maximizing_player:
+            best_score = float("-inf")
+        else:
+            best_score = float("inf")
+
+        best_move = (-1, -1)
+        for move in game.get_legal_moves():
+            step_game = game.forecast_move(move)
+            step_score, _ = self.alphabeta(step_game, depth - 1, alpha, beta, not maximizing_player)
+
+            # if this is a better score, update the current best score and move
+            if self.is_better_score(step_score, best_score, maximizing_player):
+                best_score = step_score
+                best_move = move
+
+            # check if this score breaks the current alpha/beta bounds and we can prune
+            if maximizing_player and best_score >= beta:
+                return best_score, best_move
+            elif not (maximizing_player) and step_score <= alpha:
+                return best_score, best_move
+
+            # update the alpha or beta
+            if maximizing_player:
+                alpha = max(alpha, best_score)
+            else:
+                beta = min(beta, best_score)
+
+        return best_score, best_move
