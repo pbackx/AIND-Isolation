@@ -24,11 +24,11 @@ def reachable_spaces(game, player, depth=3):
     """
     reachable = set()
 
-    if depth==0:
+    if depth == 0:
         return reachable
 
     for move in game.get_legal_moves(player):
         reachable.add(move)
         game_move_taken = game.forecast_move(move)
-        reachable.union(reachable_spaces(game_move_taken, player, depth-1))
+        reachable = reachable.union(reachable_spaces(game_move_taken, player, depth - 1))
     return reachable
