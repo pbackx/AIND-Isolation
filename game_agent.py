@@ -11,18 +11,49 @@ import math
 
 import itertools
 
+from game_utils import reachable_spaces
+
 
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
     pass
 
 
-def custom_score(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
+def possible_direction_score(game, player):
+    """My first try at a score was to count the number of directions that the player can go to.
+    I split the board in four quadrants and check to how many quadrants the player can move.
 
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
+    The results were pretty bad. In hindsight, this is probably to be expected. Instead of counting all
+    possible moves, I summarize them into 4 options. So I'm removing information from the score.
+    """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    possible_directions = set()
+    for move_x, move_y in game.get_legal_moves(player):
+        current_x, current_y = game.get_player_location(player)
+        if move_x - current_x == 0:
+            dir_x = 0
+        else:
+            dir_x = math.copysign(1, move_x - current_x)
+        if move_y - current_y == 0:
+            dir_y = 0
+        else:
+            dir_y = math.copysign(1, move_y - current_y)
+        possible_directions.add((dir_x, dir_y))
+
+    return float(len(possible_directions))
+
+
+def custom_score(game, player):
+    """After my failed possible_direction_score attempt, I thought it might be a good idea to actually
+    introduce more information into the score. What's the easiest way? Also calculate the number of next
+    moves after the current one.
+
+    TODO: other option is to check for partitioning of the board and count the size
 
     Parameters
     ----------
@@ -46,20 +77,9 @@ def custom_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    possible_directions = set()
-    for move_x, move_y in game.get_legal_moves(player):
-        current_x, current_y = game.get_player_location(player)
-        if move_x - current_x == 0:
-            dir_x = 0
-        else:
-            dir_x = math.copysign(1, move_x - current_x)
-        if move_y - current_y == 0:
-            dir_y = 0
-        else:
-            dir_y = math.copysign(1, move_y - current_y)
-        possible_directions.add((dir_x, dir_y))
-
-    return float(len(possible_directions))
+    own_spaces = len(reachable_spaces(game, player, 2))
+    opp_spaces = len(reachable_spaces(game, game.get_opponent(player), 2))
+    return float(own_spaces - opp_spaces)
 
 
 class CustomPlayer:
