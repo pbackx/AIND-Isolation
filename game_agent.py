@@ -33,6 +33,7 @@ def possible_direction_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
+    # this set contains the possible directions, eg {(1,1), (-1, 1)}
     possible_directions = set()
     for move_x, move_y in game.get_legal_moves(player):
         current_x, current_y = game.get_player_location(player)
@@ -194,35 +195,54 @@ class CustomPlayer:
 
         self.time_left = time_left
 
-        # Perform any required initializations, including selecting an initial
-        # move from the game board (i.e., an opening book), or returning
-        # immediately if there are no legal moves
+        # Without legal moves, we don't need to make a decision
+        if len(legal_moves) == 0:
+            return (-1,-1)
 
+        # Based on the lectures and my own experimentation, starting in the center is the best possible move
         if game.get_player_location(self) is None:
-            return math.ceil(game.height / 2), math.ceil(
-                game.width / 2)  # TODO better way of determining an opening move, I should probably also check if I'm the first or second player
+            opening_move = math.ceil(game.height / 2), math.ceil(game.width / 2)
+            if opening_move in legal_moves:
+                return opening_move
+            else:
+                return opening_move[0], opening_move[1]+1
 
         current_best_move = None
-
         try:
-            # The search method call (alpha beta or minimax) should happen in
-            # here in order to avoid timeout. The try/except block will
-            # automatically catch the exception raised by the search method
-            # when the timer gets close to expiring
             if self.iterative:
+                # When using iterative deepening, we keep searching deeper and deeper until time runs out
                 for iteration in itertools.count(1):
                     current_best_move = self.run_method(game, iteration)
             else:
+                # The "normal" search will just search until a given depth
                 current_best_move = self.run_method(game, self.search_depth)
 
         except Timeout:
-            # Handle any actions required at timeout, if necessary
+            # When a timeout occurs, we pass the best possible move we have at that moment
             pass
 
         # Return the best move from the last completed search iteration
         return current_best_move
 
     def run_method(self, game, depth):
+        """This method will run the desired method. Currently minimax and alphabeta are supported, but one
+        could add other options here.
+
+        Parameters
+        ----------
+        game : isolation.Board
+            An instance of the Isolation game `Board` class representing the
+            current game state
+
+        depth : int
+            Depth is an integer representing the maximum number of plies to
+            search in the game tree before aborting
+
+        Returns
+        -------
+        tuple(int, int)
+            The best move for the selected method and depth; (-1, -1) for no legal moves
+        """
         if self.method == 'minimax':
             _, current_best_move = self.minimax(game, depth)
         elif self.method == 'alphabeta':
@@ -265,9 +285,11 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
+        # When search depth is 0, return the score of the current board
         if depth <= 0:
             return self.score(game, self), (-1, -1)
 
+        # Depending on whether this is a maximizing or minimizing player the search works in a different direction
         best_score = float("-inf") if maximizing_player else float("inf")
         best_move = (-1, -1)
 

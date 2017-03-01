@@ -25,6 +25,8 @@ from multiprocessing import TimeoutError
 from queue import Empty as QueueEmptyError
 from importlib import reload
 
+from game_agent import CustomPlayer
+
 WRONG_MOVE = """
 The {} function failed because it returned a non-optimal move at search depth {}.
 Valid choices: {}
@@ -534,6 +536,18 @@ class Project1Test(unittest.TestCase):
 
             self.assertTrue(chosen_move in legal_moves, INVALID_MOVE.format(
                 legal_moves, chosen_move))
+
+    def test_opening_move(self):
+        """ Test the opening moves. It appears that none of the tests nor the tournament tests this, so
+        I added some tests here"""
+        player1 = CustomPlayer()
+        player2 = CustomPlayer()
+        board = isolation.Board(player1, player2, 5, 5)
+        move1 = player1.get_move(board, board.get_legal_moves(player1), 1000)
+        self.assertTrue(move1 == (3,3))
+        board.apply_move(move1)
+        move2 = player2.get_move(board, board.get_legal_moves(player2), 1000)
+        self.assertTrue(move2 == (3,4))
 
 
 if __name__ == '__main__':
