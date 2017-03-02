@@ -294,8 +294,12 @@ class CustomPlayer:
         best_move = (-1, -1)
 
         for move in game.get_legal_moves():
+            # For all legal moves, we forecast the game and calculate its score by recursively running minimax.
+            # The depth is decreased so that we only search the requested depth.
             step_game = game.forecast_move(move)
             step_score, _ = self.minimax(step_game, depth - 1, not maximizing_player)
+
+            # If this is a better score, update the current best score and move
             if self.is_better_score(step_score, best_score, maximizing_player):
                 best_score = step_score
                 best_move = move
@@ -304,6 +308,8 @@ class CustomPlayer:
 
     @staticmethod
     def is_better_score(score_to_test, score, maximizing):
+        """A small helper method to decide what is the best score. This depends on whether or not this is a
+        maximizing player."""
         if maximizing:
             return score_to_test > score
         else:
@@ -350,25 +356,26 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
+        # If we don't want to search any deeper, we return the score at this point
         if depth <= 0:
             return self.score(game, self), (-1, -1)
 
-        if maximizing_player:
-            best_score = float("-inf")
-        else:
-            best_score = float("inf")
-
+        # Depending on whether this is a maximizing or minimizing player the search works in a different direction
+        best_score = float("-inf") if maximizing_player else float("inf")
         best_move = (-1, -1)
+
         for move in game.get_legal_moves():
+            # As in minimax we take the next legal move and recursively run alphabeta on it (decreasing the depth)
             step_game = game.forecast_move(move)
             step_score, _ = self.alphabeta(step_game, depth - 1, alpha, beta, not maximizing_player)
 
-            # if this is a better score, update the current best score and move
+            # If this is a better score, update the current best score and move
             if self.is_better_score(step_score, best_score, maximizing_player):
                 best_score = step_score
                 best_move = move
 
-            # check if this score breaks the current alpha/beta bounds and we can prune
+            # Check if this score breaks the current alpha/beta bounds and we can prune. This means we can return
+            # immediately and don't need to search any remaining legal moves.
             if maximizing_player and best_score >= beta:
                 return best_score, best_move
             elif not (maximizing_player) and step_score <= alpha:
