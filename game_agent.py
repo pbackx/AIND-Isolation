@@ -86,7 +86,7 @@ def possible_moves_ahead_score(game, player):
     return float(own_spaces - opp_spaces)
 
 
-def custom_score(game, player):
+def weighted_improved_score(game, player):
     """This metric is comparable to the improved score, but it will divide this outcome by the number of
     blank spaces. For instance, if there are only 3 blank spaces, 2 possible moves is pretty good. 2 possible
     moves if there are 20 blank spaces is not as good.
@@ -117,6 +117,35 @@ def custom_score(game, player):
     available_spaces = len(game.get_blank_spaces())
     return improved / available_spaces
 
+
+def custom_score(game, player):
+    """This metric is combines the two approaches above.
+
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+
+    Returns
+    -------
+    float
+        The heuristic value of the current game state to the specified player.
+    """
+
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    score = possible_moves_ahead_score(game, player)
+    available_spaces = len(game.get_blank_spaces())
+    return score / available_spaces
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function

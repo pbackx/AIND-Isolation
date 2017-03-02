@@ -30,7 +30,7 @@ from sample_players import RandomPlayer
 from sample_players import null_score
 from sample_players import open_move_score
 from sample_players import improved_score
-from game_agent import CustomPlayer
+from game_agent import CustomPlayer, possible_direction_score, possible_moves_ahead_score, weighted_improved_score
 from game_agent import custom_score
 
 NUM_MATCHES = 5  # number of matches against each opponent
@@ -161,7 +161,10 @@ def main():
     # relative to the performance of the ID_Improved agent to account for
     # faster or slower computers.
     test_agents = [Agent(CustomPlayer(score_fn=improved_score, **CUSTOM_ARGS), "ID_Improved"),
-                   Agent(CustomPlayer(score_fn=custom_score, **CUSTOM_ARGS), "Student")]
+                   Agent(CustomPlayer(score_fn=possible_direction_score, **CUSTOM_ARGS), "possible_direction"),
+                   Agent(CustomPlayer(score_fn=possible_moves_ahead_score, **CUSTOM_ARGS), "possible_moves_ahead"),
+                   Agent(CustomPlayer(score_fn=weighted_improved_score, **CUSTOM_ARGS), "weighted_improved"),
+                   Agent(CustomPlayer(score_fn=custom_score, **CUSTOM_ARGS), "weighted_moves_ahead")]
 
     print(DESCRIPTION)
     for agentUT in test_agents:
